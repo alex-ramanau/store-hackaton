@@ -16,7 +16,7 @@ func main() {
 	r := gin.Default()
 
 	//App health check
-    r.GET("/ping", handlers.CheckHealth)
+	r.GET("/ping", handlers.CheckHealth)
 
 	// Define app routes
 	v1 := r.Group("/v1/inventory")
