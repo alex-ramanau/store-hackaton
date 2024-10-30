@@ -2,15 +2,15 @@ package main
 
 import (
 	"github.com/gin-gonic/gin"
-	"log"
 	"inventory-service/handlers"
-	//"inventory-service/models"
+	"inventory-service/models"
+	"log"
+	//"net/http"
 )
 
 func main() {
 	// Initialize the database.
-    // NOTE: moved to init.sql
-	// models.InitDB()
+	models.InitDB()
 
 	// Set up the Gin router
 	r := gin.Default()
@@ -34,4 +34,3 @@ func main() {
 		log.Fatalf("Could not run server: %v", err)
 	}
 }
-

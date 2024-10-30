@@ -20,8 +20,10 @@ func InitDB() {
 	if err != nil {
 		log.Fatalf("Could not connect to the database: %v", err)
 	}
+	log.Printf("Connected to DB host %v, DB %v.", os.Getenv("DB_HOST"), os.Getenv("DB_NAME"))
 
-	db.MustExec(schema)
+    // NOTE: moved to init.sql
+	//db.MustExec(schema)
 }
 
 // GetDB returns the database connection
