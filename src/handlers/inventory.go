@@ -41,11 +41,30 @@ func GrantItem(c *gin.Context) {
 	}
 
 	db := models.GetDB()
-	_, err := db.Exec("INSERT INTO player_inventory (player_id, item_code, inventory_type, amount) VALUES ($1, $2, $3, $4)",
-		request.PlayerID, request.ItemCode, request.InventoryType, request.Amount)
-	if err != nil {
+
+	// check if (player_id, item_code) already exists
+	var count int
+	if err := db.Get(&count, "SELECT COUNT(*) FROM player_inventory WHERE player_id=$1 AND item_code=$2", request.PlayerID, request.ItemCode); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "error_code": "500", "error_message": "Internal Server Error", "context": err.Error()})
 		return
+	}
+
+	if count > 0 {
+		// Update the existing row and increment the amount
+		_, err := db.Exec("UPDATE player_inventory SET amount = amount + $1 WHERE player_id = $2 AND item_code = $3",
+		request.Amount, request.PlayerID, request.ItemCode)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "error_code": "500", "error_message": "Internal Server Error", "context": err.Error()})
+			return
+		}
+	} else {
+		// Insert new record if the pair does not exist
+		_, err := db.Exec("INSERT INTO player_inventory (player_id, item_code, inventory_type, amount) VALUES ($1, $2, $3, $4)",
+			request.PlayerID, request.ItemCode, request.InventoryType, request.Amount)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "error_code": "500", "error_message": "Internal Server Error", "context": err.Error()})
+			return
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{"status": "OK", "data": gin.H{}})
