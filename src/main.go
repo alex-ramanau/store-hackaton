@@ -4,12 +4,13 @@ import (
 	"github.com/gin-gonic/gin"
 	"log"
 	"inventory-service/handlers"
-	"inventory-service/models"
+	//"inventory-service/models"
 )
 
 func main() {
-	// Initialize the database
-	models.InitDB()
+	// Initialize the database.
+    // NOTE: moved to init.sql
+	// models.InitDB()
 
 	// Set up the Gin router
 	r := gin.Default()
