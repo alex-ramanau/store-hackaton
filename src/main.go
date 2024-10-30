@@ -15,7 +15,10 @@ func main() {
 	// Set up the Gin router
 	r := gin.Default()
 
-	// Define routes
+	//App health check
+    r.GET("/ping", handlers.CheckHealth)
+
+	// Define app routes
 	v1 := r.Group("/v1/inventory")
 	{
 		v1.POST("/get", handlers.GetInventory)
