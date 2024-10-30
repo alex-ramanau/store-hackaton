@@ -41,7 +41,7 @@ func GrantItem(c *gin.Context) {
 	}
 
 	db := models.GetDB()
-	_, err := db.Exec("INSERT INTO inventory (player_id, item_code, inventory_type, amount) VALUES ($1, $2, $3, $4)",
+	_, err := db.Exec("INSERT INTO player_inventory (player_id, item_code, inventory_type, amount) VALUES ($1, $2, $3, $4)",
 		request.PlayerID, request.ItemCode, request.InventoryType, request.Amount)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "error_code": "500", "error_message": "Internal Server Error", "context": err.Error()})
