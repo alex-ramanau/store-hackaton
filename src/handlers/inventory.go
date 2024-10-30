@@ -18,7 +18,7 @@ func GetInventory(c *gin.Context) {
 
 	db := models.GetDB()
 	var inventory []models.Inventory
-	if err := db.Select(&inventory, "SELECT * FROM inventory WHERE player_id=$1", request.PlayerID); err != nil {
+	if err := db.Select(&inventory, "SELECT id, player_id, item_code, inventory_type, amount FROM player_inventory WHERE player_id=$1", request.PlayerID); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "error_code": "500", "error_message": "Internal Server Error", "context": err.Error()})
 		return
 	}
