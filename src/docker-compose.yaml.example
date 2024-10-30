@@ -1,0 +1,107 @@
+services:
+  go-inventory-db:
+    container_name: go-inventory-db
+    image: 'postgres:16.1'
+    shm_size: 1g
+    privileged: true
+    environment:
+      - POSTGRES_DB=inventory_service
+      - POSTGRES_USER=inventory_service
+      - POSTGRES_PASSWORD=inventory_service
+      - POSTGRES_HOST=localhost
+      - POSTGRES_PORT=5432
+    ports:
+      - '5432:5432'
+    volumes:
+      - 'go_db_data:/var/lib/postgresql/data'
+  go-inventory-db-migration:
+    container_name: go-inventory-db-migration
+    image: go-inventory-service
+    entrypoint: []
+    command: ['/wait-for-it.sh', 'go-inventory-db:5432', '--timeout=10', '--',
+              'bash', '/inventory_service/run_migrations.sh']
+    depends_on:
+      - go-inventory-db
+
+  go-inventory-service:
+    container_name: go-inventory-service
+    image: go-inventory-service
+    entrypoint: []
+    command: ['/wait-for-it.sh', 'go-inventory-db:5432', '--timeout=10', '--',
+              'bash', '/inventory_service/run_inventory.sh']
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.inventory
+    ports:
+      - '8080:8080'
+    depends_on:
+      - go-inventory-db
+      - go-inventory-db-migration
+
+  locust:
+    container_name: locust
+    image: locust
+    entrypoint: []
+    command: ['locust', '-f', 'inventory_service_locustfile.py']
+    working_dir: /perf_tests
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.locust
+    ports:
+      - '8089:8089'
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    ports:
+      - 9090:9090
+    restart: unless-stopped
+    volumes:
+      - ./docker/prometheus:/etc/prometheus
+      - go_prom_data:/prometheus
+  node-exporter:
+    image: prom/node-exporter
+    container_name: node-exporter
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    ports:
+      - '9100:9100'
+    restart: unless-stopped
+  grafana:
+    image: grafana/grafana-oss:9.5.16
+    container_name: grafana
+    ports:
+      - 3000:3000
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=grafana
+    volumes:
+      - ./docker/grafana:/etc/grafana/provisioning/datasources
+      - go_grafana_data:/var/lib/grafana
+  postgres-exporter:
+    image: quay.io/prometheuscommunity/postgres-exporter:v0.15.0
+    restart: always
+    environment:
+      - DATA_SOURCE_URI=inventory-db:5432/postgres?sslmode=disable
+      - DATA_SOURCE_USER=inventory_service
+      - DATA_SOURCE_PASS=inventory_service
+    ports:
+      - "9187:9187"
+    depends_on:
+      - go-inventory-db
+
+
+volumes:
+  go_db_data:
+  go_prom_data:
+  go_grafana_data:
